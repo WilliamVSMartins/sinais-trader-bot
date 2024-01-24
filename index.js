@@ -1,55 +1,71 @@
-const { Telegraf } = require("telegraf")
-const { message } = require('telegraf/filters')
-const fs = require("fs")
+const { Telegraf } = require("telegraf");
+const { message } = require('telegraf/filters');
+const fs = require("fs");
 
-const fileContent = fs.readFileSync('messageHistory.json', 'utf-8');
-const messageHistory = JSON.parse(fileContent) 
-console.log(messageHistory)
+const historyFile = 'messageHistory.json';
+const MAX_HISTORY_LENGTH = 1000;
+const DELETE_COUNT = 500;
 
-require("dotenv").config()
-const bot = new Telegraf(process.env.BOT_TOKEN)
+const messageHistory = readHistoryFromFile(historyFile);
 
+const receiveGroup = process.env.RECEIVE_GROUP
+const sendGroup = process.env.SEND_GROUP
+
+require("dotenv").config();
+const bot = new Telegraf(process.env.BOT_TOKEN);
 
 bot.on(message("text"), async (ctx) => {
-  //-1002044334448 enviar
-  //-1001917818475 receber
-  // envio,ediçao e marcaçao
-  // console.log(ctx)
-  // console.log(ctx.message.reply_to_message)
-  console.log(ctx.message)
+  const { message } = ctx;
 
-  if(ctx.message.reply_to_message){
-    const messageId = ctx.message.reply_to_message.message_id
-    const messageText = ctx.message.text
-    const pair = messageHistory.find(pair => pair.enviarId === messageId)
-    console.log(pair)
-    await ctx.telegram.sendMessage(-1001917818475, messageText, {
+  console.log(message);
+
+  if (message.reply_to_message) {
+    await handleReply(ctx, message);
+  } else if (message.chat.id === sendGroup) {
+    await handleSentMessage(ctx, message);
+  }
+});
+
+async function handleReply(ctx, message) {
+  const messageId = message.reply_to_message.message_id;
+  const messageText = message.text;
+
+  const pair = messageHistory.find(pair => pair.enviarId === messageId);
+
+  if (pair) {
+    await ctx.telegram.sendMessage(receiveGroup , messageText, {
       reply_to_message_id: pair.receberId
-    })
-    return
-
+    });
   }
+}
 
-  if (ctx.message.chat.id == -1002044334448) {
-    const enviado = await ctx.telegram.sendMessage(-1001917818475, ctx.message.text)
-    messageHistory.push({
-      enviarId: ctx.message.message_id,
-      receberId: enviado.message_id
-  })
-  // Convertendo o array para JSON
-  const jsonData = JSON.stringify(messageHistory, null, 2); // O segundo argumento (null) e o terceiro argumento (2) são opcionais e são usados para formatar o JSON com espaçamento para melhor legibilidade.
-
-  // Escrevendo o JSON no arquivo
-  fs.writeFileSync('messageHistory.json', jsonData);
+async function handleSentMessage(ctx, message) {
+  const enviado = await ctx.telegram.sendMessage(receiveGroup , message.text);
+  messageHistory.push({
+    enviarId: message.message_id,
+    receberId: enviado.message_id
+  });
 
 
+  if (messageHistory.length > MAX_HISTORY_LENGTH) {
+    messageHistory.splice(0, DELETE_COUNT);
 
-    console.log(messageHistory)
-    console.log("enviado com sucesso")
+    
+    updateHistoryFile();
   }
-  
+}
 
-  
+function readHistoryFromFile(file) {
+  if (fs.existsSync(file)) {
+    return JSON.parse(fs.readFileSync(file, 'utf-8'));
+  } else {
+    return [];
+  }
+}
 
-})
-bot.launch()
+function updateHistoryFile() {
+  const jsonData = JSON.stringify(messageHistory, null, 2);
+  fs.writeFileSync(historyFile, jsonData);
+}
+
+bot.launch();
