@@ -1,6 +1,7 @@
 const { Telegraf } = require("telegraf");
 const { message } = require('telegraf/filters');
 const fs = require("fs");
+require("dotenv").config();
 
 const historyFile = 'messageHistory.json';
 const MAX_HISTORY_LENGTH = 1000;
@@ -8,16 +9,13 @@ const DELETE_COUNT = 500;
 
 const messageHistory = readHistoryFromFile(historyFile);
 
-const receiveGroup = process.env.RECEIVE_GROUP
-const sendGroup = process.env.SEND_GROUP
+const receiveGroup = Number(process.env.RECEIVE_GROUP)
+const sendGroup = Number(process.env.SEND_GROUP)
 
-require("dotenv").config();
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
 bot.on(message("text"), async (ctx) => {
   const { message } = ctx;
-
-  console.log(message);
 
   if (message.reply_to_message) {
     await handleReply(ctx, message);
@@ -68,4 +66,4 @@ function updateHistoryFile() {
   fs.writeFileSync(historyFile, jsonData);
 }
 
-bot.launch();
+bot.launch()
