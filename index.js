@@ -33,20 +33,18 @@ async function handleMessage(ctx, message) {
 
 async function handleReply(ctx, message) {
   const messageId = message.reply_to_message.message_id;
-  const messageText = message.text;
 
   const pair = messageHistory.find(pair => pair.enviarId === messageId);
 
   if (pair) {
-    await ctx.telegram.sendMessage(receiveGroup , messageText, {
+    await handleSentMessage(ctx, message, {
       reply_to_message_id: pair.receberId
-    });
+    })
   }
 }
 
-async function handleSentMessage(ctx, message) {
-  const enviado = await handleFile(ctx, message)
-  console.log(enviado)
+async function handleSentMessage(ctx, message, options) {
+  const enviado = await handleFile(ctx, message, options)
   messageHistory.push({
     enviarId: message.message_id,
     receberId: enviado.message_id
@@ -59,37 +57,52 @@ async function handleSentMessage(ctx, message) {
   updateHistoryFile();
 }
 
-async function handleFile(ctx, message) {
+async function handleFile(ctx, message, options) {
   if(message.text){
-    return await handleText(ctx, message)
+    return await handleText(ctx, message, options)
   } else if (message.voice) {
-    return await handleVoice(ctx, message);
+    return await handleVoice(ctx, message, options);
   } else if (message.video) {
-    return await handleVideo(ctx, message);
+    return await handleVideo(ctx, message, options);
   } else if (message.photo) {
-    return await handlePhoto(ctx, message);
+    return await handlePhoto(ctx, message, options);
   } else if (message.audio) {
-    return await handleAudio(ctx, message);
+    return await handleAudio(ctx, message, options);
   }
 }
 
-async function handleText(ctx, message) {
+async function handleText(ctx, message, options) {
+  if(options) {
+    return await ctx.telegram.sendMessage(receiveGroup, message.text, options);  
+  }
   return await ctx.telegram.sendMessage(receiveGroup, message.text);
 }
 
-async function handleVoice(ctx, message) {
+async function handleVoice(ctx, message, options) {
+  if(options) {
+    return await ctx.telegram.sendVoice(receiveGroup, message.voice.file_id, options);  
+  }
   return await ctx.telegram.sendVoice(receiveGroup, message.voice.file_id);
 }
 
-async function handleVideo(ctx, message) {
+async function handleVideo(ctx, message, options) {
+  if(options) {
+    return await ctx.telegram.sendVideo(receiveGroup, message.video.file_id, options);  
+  }
   return await ctx.telegram.sendVideo(receiveGroup, message.video.file_id);
 }
 
-async function handlePhoto(ctx, message) {
+async function handlePhoto(ctx, message, options) {
+  if(options) {
+    return await ctx.telegram.sendPhoto(receiveGroup, message.photo[message.photo.length - 1].file_id, options);  
+  }
   return await ctx.telegram.sendPhoto(receiveGroup, message.photo[message.photo.length - 1].file_id);
 }
 
-async function handleAudio(ctx, message) {
+async function handleAudio(ctx, message, options) {
+  if(options) {
+    return await ctx.telegram.sendAudio(receiveGroup, message.audio.file_id, options);  
+  }
   return await ctx.telegram.sendAudio(receiveGroup, message.audio.file_id);
 }
 
