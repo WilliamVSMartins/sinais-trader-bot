@@ -14,6 +14,19 @@ const sendGroup = Number(process.env.SEND_GROUP)
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
+bot.use(async (ctx) => {
+  const { update } = ctx;
+  const message = update.channel_post
+  
+  if(message){
+    if (message.reply_to_message) {
+      await handleReply(ctx, message);
+    } else if (message.chat.id === sendGroup) {
+      await handleSentMessage(ctx, message);
+    }
+  }
+})
+
 bot.on(message("text"), async (ctx) => {
   const { message } = ctx;
 
