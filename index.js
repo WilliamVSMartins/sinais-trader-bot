@@ -16,9 +16,12 @@ const bot = new Telegraf(process.env.BOT_TOKEN);
 bot.use(async (ctx) => {
   const { update } = ctx;
   const message = update.channel_post;
+  const editedMessage = update.edited_channel_post;
   
   if (message) {
     await handleMessage(ctx, message);
+  } else if(editedMessage && editedMessage.text){
+    await handleEdit(ctx, editedMessage)
   }
 })
 
@@ -27,6 +30,16 @@ async function handleMessage(ctx, message) {
     await handleReply(ctx, message);
   } else if (message.chat.id === sendGroup) {
     await handleSentMessage(ctx, message);
+  }
+}
+
+async function handleEdit(ctx, editedMessage) {
+  const editedMessageId = editedMessage.message_id;
+
+  const pair = messageHistory.find(pair => pair.enviarId === editedMessageId);
+
+  if (pair) {
+    await ctx.telegram.editMessageText(receiveGroup, pair.receberId, undefined, editedMessage.text); 
   }
 }
 
