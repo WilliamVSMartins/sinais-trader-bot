@@ -1,5 +1,4 @@
 const { Telegraf } = require("telegraf");
-const { message } = require('telegraf/filters');
 const fs = require("fs");
 require("dotenv").config();
 
@@ -44,7 +43,7 @@ async function handleReply(ctx, message) {
 }
 
 async function handleSentMessage(ctx, message, options) {
-  const enviado = await handleFile(ctx, message, options)
+  const enviado = await ctx.telegram.copyMessage(receiveGroup, sendGroup, message.message_id, options); 
   messageHistory.push({
     enviarId: message.message_id,
     receberId: enviado.message_id
@@ -55,55 +54,6 @@ async function handleSentMessage(ctx, message, options) {
     messageHistory.splice(0, DELETE_COUNT);
   }
   updateHistoryFile();
-}
-
-async function handleFile(ctx, message, options) {
-  if(message.text){
-    return await handleText(ctx, message, options)
-  } else if (message.voice) {
-    return await handleVoice(ctx, message, options);
-  } else if (message.video) {
-    return await handleVideo(ctx, message, options);
-  } else if (message.photo) {
-    return await handlePhoto(ctx, message, options);
-  } else if (message.audio) {
-    return await handleAudio(ctx, message, options);
-  }
-}
-
-async function handleText(ctx, message, options) {
-  if(options) {
-    return await ctx.telegram.sendMessage(receiveGroup, message.text, options);  
-  }
-  return await ctx.telegram.sendMessage(receiveGroup, message.text);
-}
-
-async function handleVoice(ctx, message, options) {
-  if(options) {
-    return await ctx.telegram.sendVoice(receiveGroup, message.voice.file_id, options);  
-  }
-  return await ctx.telegram.sendVoice(receiveGroup, message.voice.file_id);
-}
-
-async function handleVideo(ctx, message, options) {
-  if(options) {
-    return await ctx.telegram.sendVideo(receiveGroup, message.video.file_id, options);  
-  }
-  return await ctx.telegram.sendVideo(receiveGroup, message.video.file_id);
-}
-
-async function handlePhoto(ctx, message, options) {
-  if(options) {
-    return await ctx.telegram.sendPhoto(receiveGroup, message.photo[message.photo.length - 1].file_id, options);  
-  }
-  return await ctx.telegram.sendPhoto(receiveGroup, message.photo[message.photo.length - 1].file_id);
-}
-
-async function handleAudio(ctx, message, options) {
-  if(options) {
-    return await ctx.telegram.sendAudio(receiveGroup, message.audio.file_id, options);  
-  }
-  return await ctx.telegram.sendAudio(receiveGroup, message.audio.file_id);
 }
 
 function readHistoryFromFile(file) {
