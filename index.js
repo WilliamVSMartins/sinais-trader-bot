@@ -18,12 +18,19 @@ bot.use(async (ctx) => {
   const { update } = ctx;
   const message = update.channel_post
   
-  if(message){
+  if(message && message.text){
     if (message.reply_to_message) {
       await handleReply(ctx, message);
     } else if (message.chat.id === sendGroup) {
       await handleSentMessage(ctx, message);
     }
+  } else if (message && message.voice) {
+    await ctx.telegram.sendVoice(receiveGroup, message.voice.file_id)
+  }
+  else if (message && message.video) {
+    await ctx.telegram.sendVideo(receiveGroup, message.video.file_id)
+  } else if (message && message.photo) {
+    await ctx.telegram.sendPhoto(receiveGroup, message.photo[message.photo.length - 1].file_id)
   }
 })
 
