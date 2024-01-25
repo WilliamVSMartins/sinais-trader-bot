@@ -1,5 +1,6 @@
 const { Telegraf } = require("telegraf");
 const fs = require("fs");
+
 require("dotenv").config();
 
 const historyFile = 'messageHistory.json';
@@ -13,15 +14,21 @@ const sendGroup = Number(process.env.SEND_GROUP)
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-bot.use(async (ctx) => {
+bot.on("channel_post", async (ctx) => {
   const { update } = ctx;
   const message = update.channel_post;
-  const editedMessage = update.edited_channel_post;
   
   if (message) {
     await handleMessage(ctx, message);
-  } else if(editedMessage && editedMessage.text){
-    await handleEdit(ctx, editedMessage)
+  }
+})
+
+bot.on("edited_channel_post", async (ctx) => {
+  const { update } = ctx;
+  const editedMessage = update.edited_channel_post;
+  
+  if(editedMessage && editedMessage.text){
+      await handleEdit(ctx, editedMessage)
   }
 })
 
