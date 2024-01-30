@@ -4,7 +4,7 @@ const fs = require("fs");
 require("dotenv").config();
 
 const historyFile = 'messageHistory.json';
-const MAX_HISTORY_LENGTH = 1000;
+const MAX_HISTORY_LENGTH = 2000;
 const DELETE_COUNT = 500;
 
 const messageHistory = readHistoryFromFile(historyFile);
@@ -15,21 +15,31 @@ const sendGroup = Number(process.env.SEND_GROUP)
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
 bot.on("channel_post", async (ctx) => {
-  const { update } = ctx;
-  const message = update.channel_post;
-  
-  if (message) {
-    await handleMessage(ctx, message);
+  try {
+    const { update } = ctx;
+    const message = update.channel_post;
+    
+    if (message) {
+      await handleMessage(ctx, message);
+    }
+  } catch (err) {
+    console.error(`Error handling channel_post: ${err}`);
   }
+  
 })
 
 bot.on("edited_channel_post", async (ctx) => {
-  const { update } = ctx;
-  const editedMessage = update.edited_channel_post;
-  
-  if(editedMessage && editedMessage.text){
-      await handleEdit(ctx, editedMessage)
+  try {
+    const { update } = ctx;
+    const editedMessage = update.edited_channel_post;
+    
+    if(editedMessage && editedMessage.text){
+        await handleEdit(ctx, editedMessage)
+    }
+  } catch (err) {
+    console.error(`Error handling edited_channel_post: ${err}`);
   }
+  
 })
 
 async function handleMessage(ctx, message) {
